@@ -65,7 +65,7 @@ for i in range(n_trabajadores):
 
     cargueria = st.number_input("**Jornales de carguería**", min_value=0, step=1, key=f"cargueria_{i}")
 
-    encarre = st.number_input("**Encarre**", min_value=0, step=1, key=f"encarre_{i}")
+    encarre = st.number_input("**Jornales de encarre**", min_value=0, step=1, key=f"encarre_{i}")
 
     nomina_directa = st.number_input("**Nómina directa**", min_value=0, step=1000, key=f"nomina_{i}")
 
@@ -77,11 +77,11 @@ for i in range(n_trabajadores):
 
     varios = st.number_input("**Varios**", min_value=0, step=1000, key=f"varios_{i}")
 
-    pago_bodega = st.number_input("**Pago bodega**", min_value=0, step=1000, key=f"bodega_{i}")
+    pago_bodega = st.number_input("**Préstamo**", min_value=0, step=1000, key=f"bodega_{i}")
 
     alimentacion_descuento = st.number_input("**Alimentación (-)**", min_value=0, step=1000, key=f"desc_alimentacion_{i}")
 
-    prestamo = st.number_input("**Préstamo**", min_value=0, step=1000, key=f"prestamo_{i}")
+    prestamo = st.number_input("**Cuota préstamo**", min_value=0, step=1000, key=f"prestamo_{i}")
 
     anticipo = st.number_input("**Anticipo**", min_value=0, step=1000, key=f"anticipo_{i}")
 
@@ -104,10 +104,10 @@ for i in range(n_trabajadores):
             "Alimentaciones (+)": alimentaciones,
             "Varios Molienda": varios_molienda,
             "Varios": varios,
-            "Pago Bodega": pago_bodega,
+            "Préstamo": pago_bodega,
             concepto_adhoc_nombre or "Concepto Adicional": concepto_adhoc_valor,
             "Alimentación (-)": -alimentacion_descuento,
-            "Préstamo": -prestamo,
+            "Cuota préstamo": -prestamo,
             "Anticipo": -anticipo,
         }
         conceptos["Total a Pagar"] = sum(conceptos[c] for c in conceptos if c != "Trabajador")
@@ -126,10 +126,24 @@ if not df.empty:
     st.download_button("📥 Descargar Nómina en CSV", data=csv, file_name="nomina_completa.csv", mime="text/csv")
 
     if st.button("💾 Guardar Nómina en Carpeta Local"):
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = os.path.join(CARPETA_SALIDA, f"nomina_{timestamp}.csv")
-        df.to_csv(filename, index=False)
-        st.success(f"✅ Nómina guardada en {filename}")
+        df_nomina = pd.DataFrame(datos_nomina)
+
+        carpeta = "nomina_guardada"   # use your existing folder
+        os.makedirs(carpeta, exist_ok=True)
+
+        # Create timestamp for the filename
+        fecha_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+        # Path of the Excel file
+        ruta_archivo = os.path.join(carpeta, f"nomina_{fecha_str}.xlsx")
+
+        # Save as Excel
+        df_nomina.to_excel(ruta_archivo, index=False, engine="openpyxl")
+
+        st.success(f"✅ Nómina guardada en {ruta_archivo}")
+
+
+
 
     if st.button("🖨️ Exportar Reporte por Trabajador a PDF"):
         pdf = FPDF()
@@ -140,8 +154,9 @@ if not df.empty:
             if idx % 3 == 0:
                 pdf.add_page()
             pdf.set_font("Arial", "B", size=14)
-            pdf.cell(0, 10, f"Trabajador: {row['Trabajador']}", ln=True)
+            pdf.cell(0, 10, f"{row['Trabajador']}", ln=True)  # Only the name
             pdf.set_font("Arial", size=14)
+
             for col, val in row.items():
                 # Saltar la columna de nombre
                 if col == "Trabajador":
